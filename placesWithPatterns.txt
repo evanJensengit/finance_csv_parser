@@ -1,0 +1,20 @@
+amzn:amazon, amzn.com/bill:amazon, amazon.com:amazon,audible:amazon,
+allstate:allstate,
+circle:gas, shell:gas, gas:gas, oil:gas,
+veterinary:cats,
+costco:costco,
+yokes:grocery,safeway:grocery, yoke's:grocery,fresh:grocery, qfc:grocery,
+spectrum:internet, verizon:internet, ziply:internet,
+usps:usps, ups:ups,
+city:utilities,
+pp*apple.com/bill:apple,
+amc:entertainment, spotify:entertainment,
+doordash:food_delivery,
+target:target,
+reebok:clothes, uniqlo:clothes,
+office:office_supplies,
+planet:gym, fitness:gym, golds:gym,
+chipotle:eating_out, dining:eating_out, mod:eating_out,
+other:other
+
+
