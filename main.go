@@ -28,6 +28,8 @@ type Transaction struct {
 
 const other string = "other"
 
+var ignorePayment = []string{"online", "payment", "thank", "you"}
+
 func generateTransactionsMap(filename string) (map[string]int, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -156,8 +158,10 @@ func main() {
 	}
 	unmatched := [][]string{}
 	calculateTransactionsAtPlaces(transactionsAtPlacesMap, listOfTransactions, placesMappedToPatterns, unmatched)
-
+	fmt.Println(transactionsAtPlacesMap)
+	//fmt.Printf("%.2f", k) to get rounded 2 decimal places
 	//fmt.Println(data)
+	return
 }
 
 func calculateTransactionsAtPlaces(transactionsAtPlacesMap map[string]float64,
@@ -169,14 +173,26 @@ func calculateTransactionsAtPlaces(transactionsAtPlacesMap map[string]float64,
 			place, ok := placesMappedToPatterns[pattern]
 			if ok {
 				foundMatch = true
-				transactionsAtPlacesMap[place] -= transaction.Amount
+				transactionsAtPlacesMap[place] += transaction.Amount
+
 			}
 		}
 		if !foundMatch {
+			if len(transaction.CharacterPatterns) == len(ignorePayment) {
+				ignoreString := strings.Join(ignorePayment, " ")
+				patternsStrings := strings.Join(transaction.CharacterPatterns, " ")
+				if ignoreString == patternsStrings {
+					continue
+				}
+
+			}
 			unmatchedTransactions = append(unmatchedTransactions, transaction.CharacterPatterns)
-			transactionsAtPlacesMap[other] -= transaction.Amount
+			transactionsAtPlacesMap[other] += transaction.Amount
+
+			fmt.Println("Other Transaction", transaction)
 		}
 	}
+
 }
 
 // creates transactions objects for each row in csv file
@@ -218,7 +234,7 @@ func createTransactionObjects() ([]Transaction, error) {
 		patternsOfPlace := []string{}
 		for _, val := range stringsInDescription {
 			if unicode.IsLetter(rune(val[0])) {
-				patternsOfPlace = append(patternsOfPlace, val)
+				patternsOfPlace = append(patternsOfPlace, strings.ToLower(val))
 			}
 		}
 		//get all values that do not start with a number
@@ -232,7 +248,7 @@ func createTransactionObjects() ([]Transaction, error) {
 
 	}
 	for _, val := range data {
-		fmt.Println("val: \n Place", val.Place, "\n Date: ", val.Date.Day(), val.Date.Month(), val.Date.Year(), "\n Amount", val.Amount)
+		fmt.Println("val: \n CharacterPattern", val.CharacterPatterns, "\n Date: ", val.Date.Day(), val.Date.Month(), val.Date.Year(), "\n Amount", val.Amount)
 	}
 	return data, nil
 	// Print the resulting struct
