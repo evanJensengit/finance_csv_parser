@@ -31,8 +31,14 @@ var monthsOfYear = map[string]int{"January": 1, "February:": 2, "March": 3, "Apr
 
 const other string = "other"
 
-var ignorePayment = []string{"online", "payment", "thank", "you"}
+var ignorePayment1 = []string{"online", "payment", "thank", "you"}
 
+var ignorePayment2 = []string{"automatic", "payment", "thank", "you"}
+
+func (t *Transaction) printTransaction() {
+	fmt.Println("Place: ", t.Place)
+	fmt.Println("CharacterPatterns", t.CharacterPatterns, "\n Date: ", t.Date.Day(), t.Date.Month(), t.Date.Year(), "\n Amount", t.Amount)
+}
 func generateTransactionsMap(filename string) (map[string]int, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -235,10 +241,11 @@ func calculateTransactionsAtPlaces(transactionsAtPlacesMap map[string]float64,
 			}
 		}
 		if !foundMatch {
-			if len(transaction.CharacterPatterns) == len(ignorePayment) {
-				ignoreString := strings.Join(ignorePayment, " ")
+			if len(transaction.CharacterPatterns) == len(ignorePayment1) {
+				ignoreString1 := strings.Join(ignorePayment1, " ")
+				ignoreString2 := strings.Join(ignorePayment2, " ")
 				patternsStrings := strings.Join(transaction.CharacterPatterns, " ")
-				if ignoreString == patternsStrings {
+				if ignoreString1 == patternsStrings || ignoreString2 == patternsStrings {
 					continue
 				}
 
@@ -290,6 +297,7 @@ func createTransactionObjects() ([]Transaction, error) {
 		patternsOfPlace := []string{}
 		for _, val := range stringsInDescription {
 			if unicode.IsLetter(rune(val[0])) {
+				//need to get each string, and parts of string leading up to numbers
 				patternsOfPlace = append(patternsOfPlace, strings.ToLower(val))
 			}
 		}
@@ -346,7 +354,11 @@ func main() {
 		return
 	}
 	fmt.Println("Transactions: ")
-	fmt.Println(listOfTransactions)
+
+	for _, val := range listOfTransactions {
+		val.printTransaction()
+	}
+
 	unmatched := [][]string{}
 	calculateTransactionsAtPlaces(transactionsAtPlacesMap, listOfTransactions, placesMappedToPatterns, unmatched)
 	fmt.Println(transactionsAtPlacesMap)
