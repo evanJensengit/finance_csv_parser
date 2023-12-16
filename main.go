@@ -296,10 +296,25 @@ func createTransactionObjects() ([]Transaction, error) {
 		stringsInDescription := strings.Fields(row[4])
 		patternsOfPlace := []string{}
 		for _, val := range stringsInDescription {
-			if unicode.IsLetter(rune(val[0])) {
-				//need to get each string, and parts of string leading up to numbers
-				patternsOfPlace = append(patternsOfPlace, strings.ToLower(val))
+
+			//append each character that is not a number or special character
+			//abcd456abc would return abcd,abc
+			letterOnlyStrings := []string{}
+			currentString := ""
+			for _, character := range val {
+				if unicode.IsLetter(character) {
+					currentString += string(character)
+				} else {
+					if currentString != "" {
+						letterOnlyStrings = append(letterOnlyStrings, currentString)
+						currentString = ""
+					}
+
+				}
 			}
+			//need to get each string, and parts of string leading up to numbers
+			patternsOfPlace = append(patternsOfPlace, strings.ToLower(val))
+
 		}
 		//get all values that do not start with a number
 		record := Transaction{
