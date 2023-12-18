@@ -136,7 +136,7 @@ func initializeTransactionsAtPlacesMap(keywordMapToPlaces map[string]string) (ma
 }
 
 func firstDateLessThanSecondDate(date1 time.Time, date2 time.Time) (bool, error) {
-	fmt.Println("First date: ", date1, "\n", "Second Date: ", date2)
+	//fmt.Println("First date: ", date1, "\n", "Second Date: ", date2)
 	if date1.Year() < date2.Year() {
 		return true, nil
 	} else if date1.Year() == date2.Year() {
@@ -166,8 +166,8 @@ func findTransactionRangeToCalculate(transactionsAtPlaces []Transaction) ([]Tran
 	// scanning the input by the user
 	var fromInput, toInput string
 	fmt.Scanln(&fromInput, &toInput)
-	fmt.Println("from date", fromInput)
-	fmt.Println("to date", toInput)
+	// fmt.Println("from date", fromInput)
+	// fmt.Println("to date", toInput)
 
 	fromInputDate, err := time.Parse("01/02/2006", fromInput)
 	if err != nil {
@@ -219,7 +219,7 @@ func findTransactionRangeToCalculate(transactionsAtPlaces []Transaction) ([]Tran
 			if !inputGreaterThanCurrent && inputLessThanCurrent {
 				break
 			}
-			fmt.Println("Back ", back, " Front ", front)
+			//fmt.Println("Back ", back, " Front ", front)
 		}
 		return transactionsAtPlaces[front : back+1], nil
 	}
@@ -292,29 +292,37 @@ func createTransactionObjects() ([]Transaction, error) {
 			fmt.Println("Error parsing amount:", err)
 			return nil, err
 		}
+		fmt.Println("row 4: ")
+
 		fmt.Println(row[4])
 		stringsInDescription := strings.Fields(row[4])
+		fmt.Println("stringsindescription ", stringsInDescription)
 		patternsOfPlace := []string{}
+
 		for _, val := range stringsInDescription {
 
 			//append each character that is not a number or special character
 			//abcd456abc would return abcd,abc
-			letterOnlyStrings := []string{}
 			currentString := ""
 			for _, character := range val {
 				if unicode.IsLetter(character) {
 					currentString += string(character)
 				} else {
+
 					if currentString != "" {
-						letterOnlyStrings = append(letterOnlyStrings, currentString)
+
+						if len(currentString) > 1 {
+							patternsOfPlace = append(patternsOfPlace, strings.ToLower(currentString))
+						}
 						currentString = ""
 					}
-
 				}
 			}
-			//need to get each string, and parts of string leading up to numbers
-			patternsOfPlace = append(patternsOfPlace, strings.ToLower(val))
-
+			if currentString != "" {
+				if len(currentString) > 2 {
+					patternsOfPlace = append(patternsOfPlace, strings.ToLower(currentString))
+				}
+			}
 		}
 		//get all values that do not start with a number
 		record := Transaction{
@@ -326,9 +334,9 @@ func createTransactionObjects() ([]Transaction, error) {
 		data = append(data, record)
 
 	}
-	for _, val := range data {
-		fmt.Println("val: \n CharacterPattern", val.CharacterPatterns, "\n Date: ", val.Date.Day(), val.Date.Month(), val.Date.Year(), "\n Amount", val.Amount)
-	}
+	// for _, val := range data {
+	// 	fmt.Println("val: \n CharacterPattern", val.CharacterPatterns, "\n Date: ", val.Date.Day(), val.Date.Month(), val.Date.Year(), "\n Amount", val.Amount)
+	// }
 	return data, nil
 	// Print the resulting struct
 }
@@ -370,9 +378,9 @@ func main() {
 	}
 	fmt.Println("Transactions: ")
 
-	for _, val := range listOfTransactions {
-		val.printTransaction()
-	}
+	// for _, val := range listOfTransactions {
+	// 	val.printTransaction()
+	// }
 
 	unmatched := [][]string{}
 	calculateTransactionsAtPlaces(transactionsAtPlacesMap, listOfTransactions, placesMappedToPatterns, unmatched)
