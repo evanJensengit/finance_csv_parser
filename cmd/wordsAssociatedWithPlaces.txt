@@ -1,0 +1,30 @@
+amzn:amazon, amzn.com/bill:amazon, amazon.com:amazon, audible:amazon, amzn.com/billwa:amazon, amznamzn.com/billwa:amazon, amazon:amazon
+homegoods:house_stuff
+allstate:allstate,
+circle:gas, shell:gas, gas:gas, oil:gas, chevron:gas
+veterinary:cats,
+costco:costco,
+yokes:grocery, safeway:grocery, yoke's:grocery,fresh:grocery, qfc:grocery,
+spectrum:internet, verizon:internet, ziply:internet,
+usps:usps, ups:ups,
+city:utilities,
+automotive:car, 
+uber:travel,
+apple:apple,
+microsoft:microsoft, xbox:microsoft
+amc:entertainment, spotify:entertainment,
+doordash:food_delivery,
+target:target,
+reebok:clothes, uniqlo:clothes,
+office:office_supplies,
+planet:gym, fitness:gym, golds:gym, rock:gym
+starbucks:drinks, 
+chipotle:eating_out, dining:eating_out, mod:eating_out, mcdonalds:eating_out, mcdonald:eating_out, bar:eating_out, lu:eating_out, siam:eating_out, firehouse:eating_out
+creamery:eating_out, denny's:eating_out, dairy:eating_out, crumbl:eating_out,
+express:medication, scripts:medication, phrmcy:medication, 
+mindful:therapy,
+ambetter:insurance, dental:insurance
+petsmart:cats, petco:cats,
+other:other
+
+

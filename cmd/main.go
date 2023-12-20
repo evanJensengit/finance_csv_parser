@@ -5,78 +5,72 @@ import (
 	"encoding/csv"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 	"unicode"
 )
 
-// Define a struct for your CSV data
+// func generateTransactionsMap(filename string) (map[string]int, error) {
+// 	file, err := os.Open(filename)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer file.Close()
+// 	transactionsAtPlaces := make(map[string]int)
 
-// Example Transaction
-// Date 11/13/2023
-// Amount 12.00
-// Place: Amazon
-// CharacterPatterns are the patterns of characters that are associated with the Place
-// Transaction at place Amazon the character pattern could be: [AMAZON.COM*TO3Q13XI0, AMZNAMZN.COM/BILLWA]
-type Transaction struct {
-	Date              time.Time
-	Amount            float64
-	Place             string
-	CharacterPatterns []string
-}
+// 	// Create a scanner to read the file line by line
+// 	scanner := bufio.NewScanner(file)
+// 	// Iterate through each line
+// 	for scanner.Scan() {
+// 		line := scanner.Text()
 
-var monthsOfYear = map[string]int{"January": 1, "February:": 2, "March": 3, "April": 4, "May": 5, "June": 6, "July": 7,
-	"Auguest": 8, "September": 9, "October": 10, "November": 11, "December": 12}
+// 		// Split the line by ","
+// 		parts := strings.Split(line, ",")
+// 		for _, placeAndPattern := range parts {
 
-const other string = "other"
+// 			keyValuePair := strings.Split(placeAndPattern, ":")
+// 			if len(keyValuePair) == 2 {
+// 				// Trim leading and trailing spaces and commas from key and value
+// 				key := strings.TrimSpace(keyValuePair[0])
+// 				value, err := strconv.Atoi(keyValuePair[1])
+// 				if err != nil {
+// 					fmt.Println("Error converting to integer:", err)
+// 					return nil, err
+// 				}
+// 				// Add key-value pair to the map
+// 				transactionsAtPlaces[key] = value
+// 			}
+// 		}
+// 	}
 
-var ignorePayment1 = []string{"online", "payment", "thank", "you"}
+// 	// Check for errors during scanning
+// 	if err := scanner.Err(); err != nil {
+// 		return nil, err
+// 	}
+// 	return transactionsAtPlaces, nil
+// }
 
-var ignorePayment2 = []string{"automatic", "payment", "thank", "you"}
-
-func (t *Transaction) printTransaction() {
-	fmt.Println("Place: ", t.Place)
-	fmt.Println("CharacterPatterns", t.CharacterPatterns, "\n Date: ", t.Date.Day(), t.Date.Month(), t.Date.Year(), "\n Amount", t.Amount)
-}
-func generateTransactionsMap(filename string) (map[string]int, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-	transactionsAtPlaces := make(map[string]int)
-
-	// Create a scanner to read the file line by line
-	scanner := bufio.NewScanner(file)
-	// Iterate through each line
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		// Split the line by ","
-		parts := strings.Split(line, ",")
-		for _, placeAndPattern := range parts {
-
-			keyValuePair := strings.Split(placeAndPattern, ":")
-			if len(keyValuePair) == 2 {
-				// Trim leading and trailing spaces and commas from key and value
-				key := strings.TrimSpace(keyValuePair[0])
-				value, err := strconv.Atoi(keyValuePair[1])
-				if err != nil {
-					fmt.Println("Error converting to integer:", err)
-					return nil, err
-				}
-				// Add key-value pair to the map
-				transactionsAtPlaces[key] = value
-			}
-		}
+func printMapInOrder(myMap map[string]float64) {
+	// Extract keys from the map
+	var keys []string
+	for key := range myMap {
+		keys = append(keys, key)
 	}
 
-	// Check for errors during scanning
-	if err := scanner.Err(); err != nil {
-		return nil, err
+	// Sort the keys in alphabetical order
+	sort.Strings(keys)
+
+	// Iterate over sorted keys and print corresponding values
+	var total float64 = 0
+	for _, key := range keys {
+		fmt.Printf("%s: %.2f\n", key, myMap[key])
+
+		total += myMap[key]
 	}
-	return transactionsAtPlaces, nil
+	fmt.Printf("Total: %.2f \n", total)
+
 }
 
 // generatePlaceDict reads a text file with lines of strings
@@ -135,8 +129,9 @@ func initializeTransactionsAtPlacesMap(keywordMapToPlaces map[string]string) (ma
 	return transactionsAtPlaces, nil
 }
 
+// checks if the first date passed to function is chronologically before the second date
 func firstDateLessThanSecondDate(date1 time.Time, date2 time.Time) (bool, error) {
-	fmt.Println("First date: ", date1, "\n", "Second Date: ", date2)
+	//fmt.Println("First date: ", date1, "\n", "Second Date: ", date2)
 	if date1.Year() < date2.Year() {
 		return true, nil
 	} else if date1.Year() == date2.Year() {
@@ -166,8 +161,8 @@ func findTransactionRangeToCalculate(transactionsAtPlaces []Transaction) ([]Tran
 	// scanning the input by the user
 	var fromInput, toInput string
 	fmt.Scanln(&fromInput, &toInput)
-	fmt.Println("from date", fromInput)
-	fmt.Println("to date", toInput)
+	// fmt.Println("from date", fromInput)
+	// fmt.Println("to date", toInput)
 
 	fromInputDate, err := time.Parse("01/02/2006", fromInput)
 	if err != nil {
@@ -194,7 +189,6 @@ func findTransactionRangeToCalculate(transactionsAtPlaces []Transaction) ([]Tran
 	//most reacent closer to front of life
 
 	if inputChronological && firstInputLessThanLastTransaction {
-		fmt.Println("valid dates entered")
 		back := len(transactionsAtPlaces) - 1
 		front := 0
 		for back > front {
@@ -219,7 +213,7 @@ func findTransactionRangeToCalculate(transactionsAtPlaces []Transaction) ([]Tran
 			if !inputGreaterThanCurrent && inputLessThanCurrent {
 				break
 			}
-			fmt.Println("Back ", back, " Front ", front)
+			//fmt.Println("Back ", back, " Front ", front)
 		}
 		return transactionsAtPlaces[front : back+1], nil
 	}
@@ -232,7 +226,7 @@ func calculateTransactionsAtPlaces(transactionsAtPlacesMap map[string]float64,
 	unmatchedTransactions [][]string) {
 	for _, transaction := range listOfTransactions {
 		foundMatch := false
-		for _, pattern := range transaction.CharacterPatterns {
+		for _, pattern := range transaction.WordsAssociatedWithPlace {
 			place, ok := placesMappedToPatterns[pattern]
 			if ok {
 				foundMatch = true
@@ -241,16 +235,16 @@ func calculateTransactionsAtPlaces(transactionsAtPlacesMap map[string]float64,
 			}
 		}
 		if !foundMatch {
-			if len(transaction.CharacterPatterns) == len(ignorePayment1) {
+			if len(transaction.WordsAssociatedWithPlace) == len(ignorePayment1) {
 				ignoreString1 := strings.Join(ignorePayment1, " ")
 				ignoreString2 := strings.Join(ignorePayment2, " ")
-				patternsStrings := strings.Join(transaction.CharacterPatterns, " ")
+				patternsStrings := strings.Join(transaction.WordsAssociatedWithPlace, " ")
 				if ignoreString1 == patternsStrings || ignoreString2 == patternsStrings {
 					continue
 				}
 
 			}
-			unmatchedTransactions = append(unmatchedTransactions, transaction.CharacterPatterns)
+			unmatchedTransactions = append(unmatchedTransactions, transaction.WordsAssociatedWithPlace)
 			transactionsAtPlacesMap[other] += transaction.Amount
 
 			fmt.Println("Other Transaction", transaction)
@@ -260,8 +254,18 @@ func calculateTransactionsAtPlaces(transactionsAtPlacesMap map[string]float64,
 
 // creates transactions objects for each row in csv file
 func createTransactionObjects() ([]Transaction, error) {
+	fmt.Println("Please enter the path to the csv file you would like to use ")
+
+	//if fromInput <fromDate err
+	//if toInput > toDate err
+
+	// scanning the input by the user
+	var pathToCSV string
+	fmt.Scanln(&pathToCSV)
+	
+
 	// Open the CSV file
-	file, err := os.Open("CreditCard3.csv")
+	file, err := os.Open(pathToCSV)
 	if err != nil {
 		fmt.Println("Error opening CSV file:", err)
 		return nil, err
@@ -270,7 +274,7 @@ func createTransactionObjects() ([]Transaction, error) {
 
 	// Parse the CSV file
 	reader := csv.NewReader(file)
-	records, err := reader.ReadAll()
+	transactions, err := reader.ReadAll()
 	if err != nil {
 		fmt.Println("Error reading CSV:", err)
 		return nil, err
@@ -280,7 +284,7 @@ func createTransactionObjects() ([]Transaction, error) {
 	var data []Transaction
 
 	// Iterate through the CSV records and convert them to the struct
-	for _, row := range records[0:] { // Assuming the first row contains headers
+	for _, row := range transactions[0:] { // Assuming the first row contains headers
 		date, err := time.Parse("01/02/2006", row[0])
 		if err != nil {
 			fmt.Println("Error parsing date:", err)
@@ -292,35 +296,55 @@ func createTransactionObjects() ([]Transaction, error) {
 			fmt.Println("Error parsing amount:", err)
 			return nil, err
 		}
-		fmt.Println(row[4])
+
 		stringsInDescription := strings.Fields(row[4])
 		patternsOfPlace := []string{}
+
 		for _, val := range stringsInDescription {
-			if unicode.IsLetter(rune(val[0])) {
-				//need to get each string, and parts of string leading up to numbers
-				patternsOfPlace = append(patternsOfPlace, strings.ToLower(val))
+
+			//append each character that is not a number or special character
+			//abcd456abc would return abcd,abc
+			currentString := ""
+			for _, character := range val {
+				if unicode.IsLetter(character) {
+					currentString += string(character)
+				} else {
+
+					if currentString != "" {
+						//no one letter words associated with place
+						if len(currentString) > 1 {
+							patternsOfPlace = append(patternsOfPlace, strings.ToLower(currentString))
+						}
+						currentString = ""
+					}
+				}
+			}
+			if currentString != "" {
+				if len(currentString) > 2 {
+					patternsOfPlace = append(patternsOfPlace, strings.ToLower(currentString))
+				}
 			}
 		}
 		//get all values that do not start with a number
 		record := Transaction{
-			Date:              date,
-			Amount:            amount,
-			CharacterPatterns: patternsOfPlace,
+			Date:                     date,
+			Amount:                   amount,
+			WordsAssociatedWithPlace: patternsOfPlace,
 		}
 
 		data = append(data, record)
 
 	}
-	for _, val := range data {
-		fmt.Println("val: \n CharacterPattern", val.CharacterPatterns, "\n Date: ", val.Date.Day(), val.Date.Month(), val.Date.Year(), "\n Amount", val.Amount)
-	}
+	// for _, val := range data {
+	// 	fmt.Println("val: \n CharacterPattern", val.CharacterPatterns, "\n Date: ", val.Date.Day(), val.Date.Month(), val.Date.Year(), "\n Amount", val.Amount)
+	// }
 	return data, nil
 	// Print the resulting struct
 }
 
 func main() {
-	placesWithPatterns := "placesWithPatterns.txt"
-	placesMappedToPatterns, err := generatePlaceMap(placesWithPatterns)
+	wordsAssociatedWithPlacesFile := "wordsAssociatedWithPlaces.txt"
+	wordsAssociatedWithPlaces, err := generatePlaceMap(wordsAssociatedWithPlacesFile)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
@@ -328,12 +352,12 @@ func main() {
 	//logging
 	fmt.Println("Keyword map to places")
 
-	for key, val := range placesMappedToPatterns {
+	for key, val := range wordsAssociatedWithPlaces {
 		fmt.Println(key, ":", val)
 	}
 
-	//logging
-	transactionsAtPlacesMap, err := initializeTransactionsAtPlacesMap(placesMappedToPatterns)
+	//create transactions at places from values of wordsAssociatedWithPlaces map
+	transactionsAtPlacesMap, err := initializeTransactionsAtPlacesMap(wordsAssociatedWithPlaces)
 
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -346,23 +370,26 @@ func main() {
 	// 	fmt.Println(key, ":", val)
 	// }
 	//logging
+	//read through csv file and create a list of transaction objects
 	listOfTransactions, err := createTransactionObjects()
 
+	//ask user what range they would like to calculate transactions for
 	listOfTransactions, err = findTransactionRangeToCalculate(listOfTransactions)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
 	}
-	fmt.Println("Transactions: ")
+	//fmt.Println("Transactions: ")
 
-	for _, val := range listOfTransactions {
-		val.printTransaction()
-	}
+	// for _, val := range listOfTransactions {
+	// 	val.printTransaction()
+	// }
 
 	unmatched := [][]string{}
-	calculateTransactionsAtPlaces(transactionsAtPlacesMap, listOfTransactions, placesMappedToPatterns, unmatched)
-	fmt.Println(transactionsAtPlacesMap)
-	//fmt.Printf("%.2f", k) to get rounded 2 decimal places
-	//fmt.Println(data)
+
+	calculateTransactionsAtPlaces(transactionsAtPlacesMap, listOfTransactions, wordsAssociatedWithPlaces, unmatched)
+	//fmt.Println(transactionsAtPlacesMap)
+	printMapInOrder(transactionsAtPlacesMap)
+
 	return
 }
