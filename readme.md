@@ -3,8 +3,8 @@
 ## Purpose
 Helps user see where their money is being spent based on CSV file uploaded.  
 CSV rows formatted as:Date|amount|description.  
-User inputs start date and end date they would like to see transactions for. Application outputs how much was spent where based on the  
-values of objects in placesWithPatterns.txt   
+User inputs start date and end date they would like to see transactions for.  Application displays how much was spent where in that time period based on  
+values of key:value pairs in wordsAssociatedWithPlaces.txt   
 
 ## How to Use
 1. Install latest version of go
