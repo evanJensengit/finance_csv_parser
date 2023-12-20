@@ -9,5 +9,5 @@ User inputs start date and end date they would like to see transactions for.  Ap
 1. Install latest version of go
 2. Clone finance_csv_parser to your local machine
 3. Navigate to finance_csv_parser project
-4.run ${go run .}
+4. Run ${go run .}
  
