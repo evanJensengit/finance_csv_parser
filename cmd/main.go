@@ -391,5 +391,7 @@ func main() {
 	//fmt.Println(transactionsAtPlacesMap)
 	printMapInOrder(transactionsAtPlacesMap)
 
+	
+
 	return
 }
