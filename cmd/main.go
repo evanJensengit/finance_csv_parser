@@ -254,8 +254,18 @@ func calculateTransactionsAtPlaces(transactionsAtPlacesMap map[string]float64,
 
 // creates transactions objects for each row in csv file
 func createTransactionObjects() ([]Transaction, error) {
+	fmt.Println("Please enter the path to the csv file you would like to use ")
+
+	//if fromInput <fromDate err
+	//if toInput > toDate err
+
+	// scanning the input by the user
+	var pathToCSV string
+	fmt.Scanln(&pathToCSV)
+	
+
 	// Open the CSV file
-	file, err := os.Open("CreditCard3.csv")
+	file, err := os.Open(pathToCSV)
 	if err != nil {
 		fmt.Println("Error opening CSV file:", err)
 		return nil, err
