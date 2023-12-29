@@ -12,48 +12,9 @@ import (
 	"unicode"
 )
 
-// func generateTransactionsMap(filename string) (map[string]int, error) {
-// 	file, err := os.Open(filename)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	defer file.Close()
-// 	transactionsAtPlaces := make(map[string]int)
+const debug bool = false
 
-// 	// Create a scanner to read the file line by line
-// 	scanner := bufio.NewScanner(file)
-// 	// Iterate through each line
-// 	for scanner.Scan() {
-// 		line := scanner.Text()
-
-// 		// Split the line by ","
-// 		parts := strings.Split(line, ",")
-// 		for _, placeAndPattern := range parts {
-
-// 			keyValuePair := strings.Split(placeAndPattern, ":")
-// 			if len(keyValuePair) == 2 {
-// 				// Trim leading and trailing spaces and commas from key and value
-// 				key := strings.TrimSpace(keyValuePair[0])
-// 				value, err := strconv.Atoi(keyValuePair[1])
-// 				if err != nil {
-// 					fmt.Println("Error converting to integer:", err)
-// 					return nil, err
-// 				}
-// 				// Add key-value pair to the map
-// 				transactionsAtPlaces[key] = value
-// 			}
-// 		}
-// 	}
-
-// 	// Check for errors during scanning
-// 	if err := scanner.Err(); err != nil {
-// 		return nil, err
-// 	}
-// 	return transactionsAtPlaces, nil
-// }
-
-
-
+// prints map given in alphabetical order
 func printMapInOrder(myMap map[string]float64) {
 	// Extract keys from the map
 	var keys []string
@@ -72,7 +33,6 @@ func printMapInOrder(myMap map[string]float64) {
 		total += myMap[key]
 	}
 	fmt.Printf("Total: %.2f \n", total)
-
 }
 
 // generatePlaceDict reads a text file with lines of strings
@@ -119,6 +79,7 @@ func generatePlaceMap(filename string) (map[string]string, error) {
 	return placeDict, nil
 }
 
+// keywordMapToPlaces contains words associated with places i.e "amz":"amazon"
 func initializeTransactionsAtPlacesMap(keywordMapToPlaces map[string]string) (map[string]float64, error) {
 	transactionsAtPlaces := make(map[string]float64)
 	for _, value := range keywordMapToPlaces {
@@ -132,6 +93,7 @@ func initializeTransactionsAtPlacesMap(keywordMapToPlaces map[string]string) (ma
 }
 
 // checks if the first date passed to function is chronologically before the second date
+// returns true if so false otherwise
 func firstDateLessThanSecondDate(date1 time.Time, date2 time.Time) (bool, error) {
 	//fmt.Println("First date: ", date1, "\n", "Second Date: ", date2)
 	if date1.Year() < date2.Year() {
@@ -148,6 +110,7 @@ func firstDateLessThanSecondDate(date1 time.Time, date2 time.Time) (bool, error)
 	return false, nil
 }
 
+// receives input from user of what dates to calculate transactions between (inclusive)
 func findTransactionRangeToCalculate(transactionsAtPlaces []Transaction) ([]Transaction, error) {
 	lastTransactionDate := transactionsAtPlaces[0].Date
 	firstTransactionDate := transactionsAtPlaces[len(transactionsAtPlaces)-1].Date
@@ -157,42 +120,42 @@ func findTransactionRangeToCalculate(transactionsAtPlaces []Transaction) ([]Tran
 		lastTransactionDate.Day(), lastTransactionDate.Month(), lastTransactionDate.Year(),
 		"in the form of from: mm/dd/yyyy to: mm/dd/yyyy")
 
-	//if fromInput <fromDate err
-	//if toInput > toDate err
-
 	// scanning the input by the user
 	var fromInput, toInput string
 	fmt.Scanln(&fromInput, &toInput)
-	// fmt.Println("from date", fromInput)
-	// fmt.Println("to date", toInput)
 
 	fromInputDate, err := time.Parse("01/02/2006", fromInput)
 	if err != nil {
 		fmt.Println("Error parsing date:", err)
 		return []Transaction{}, err
 	}
+
 	toInputDate, err := time.Parse("01/02/2006", toInput)
 	if err != nil {
 		fmt.Println("Error parsing date:", err)
 		return []Transaction{}, err
 	}
+
 	inputChronological, err := firstDateLessThanSecondDate(fromInputDate, toInputDate)
 	if err != nil {
 		fmt.Println("Invalid date range entered:", err)
 		return []Transaction{}, err
 	}
+
 	firstInputLessThanLastTransaction, err := firstDateLessThanSecondDate(fromInputDate, lastTransactionDate)
 	if err != nil {
 		fmt.Println("Invalid date range entered:", err)
 		return []Transaction{}, err
 	}
 
-	fmt.Println("inputChronological", inputChronological, "firstInputLessThanLastTransaction", firstInputLessThanLastTransaction)
-	//most reacent closer to front of life
+	if debug {
+		fmt.Println("inputChronological", inputChronological, "firstInputLessThanLastTransaction", firstInputLessThanLastTransaction)
+	}
 
 	if inputChronological && firstInputLessThanLastTransaction {
 		back := len(transactionsAtPlaces) - 1
 		front := 0
+		//can be optimized to be log(n) time instead of O(n)
 		for back > front {
 			inputGreaterThanCurrent, err := firstDateLessThanSecondDate(transactionsAtPlaces[back].Date, fromInputDate)
 			if err != nil {
@@ -215,7 +178,7 @@ func findTransactionRangeToCalculate(transactionsAtPlaces []Transaction) ([]Tran
 			if !inputGreaterThanCurrent && inputLessThanCurrent {
 				break
 			}
-			//fmt.Println("Back ", back, " Front ", front)
+
 		}
 		return transactionsAtPlaces[front : back+1], nil
 	}
@@ -223,13 +186,15 @@ func findTransactionRangeToCalculate(transactionsAtPlaces []Transaction) ([]Tran
 
 }
 
+// populates transactionsAtPlaces map from Transaction objects in listOfTransactions and uses wordsAssociatedWithPlaces
+// to determine which transactions are correlated with which place in
 func calculateTransactionsAtPlaces(transactionsAtPlacesMap map[string]float64,
-	listOfTransactions []Transaction, placesMappedToPatterns map[string]string,
+	listOfTransactions []Transaction, wordsAssociatedWithPlaces map[string]string,
 	unmatchedTransactions [][]string) {
 	for _, transaction := range listOfTransactions {
 		foundMatch := false
 		for _, pattern := range transaction.WordsAssociatedWithPlace {
-			place, ok := placesMappedToPatterns[pattern]
+			place, ok := wordsAssociatedWithPlaces[pattern]
 			if ok {
 				foundMatch = true
 				transactionsAtPlacesMap[place] += transaction.Amount
@@ -248,8 +213,9 @@ func calculateTransactionsAtPlaces(transactionsAtPlacesMap map[string]float64,
 			}
 			unmatchedTransactions = append(unmatchedTransactions, transaction.WordsAssociatedWithPlace)
 			transactionsAtPlacesMap[other] += transaction.Amount
-
-			fmt.Println("Other Transaction", transaction)
+			if debug {
+				fmt.Println("Other Transaction", transaction)
+			}
 		}
 	}
 }
@@ -257,9 +223,6 @@ func calculateTransactionsAtPlaces(transactionsAtPlacesMap map[string]float64,
 // creates transactions objects for each row in csv file
 func createTransactionObjects() ([]Transaction, error) {
 	fmt.Println("Please enter the path to the csv file you would like to use ")
-
-	//if fromInput <fromDate err
-	//if toInput > toDate err
 
 	// scanning the input by the user
 	var pathToCSV string
@@ -326,20 +289,18 @@ func createTransactionObjects() ([]Transaction, error) {
 				}
 			}
 		}
-		//get all values that do not start with a number
+
 		record := Transaction{
 			Date:                     date,
 			Amount:                   amount,
 			WordsAssociatedWithPlace: patternsOfPlace,
 		}
+
 		data = append(data, record)
 
 	}
-	// for _, val := range data {
-	// 	fmt.Println("val: \n CharacterPattern", val.CharacterPatterns, "\n Date: ", val.Date.Day(), val.Date.Month(), val.Date.Year(), "\n Amount", val.Amount)
-	// }
+
 	return data, nil
-	// Print the resulting struct
 }
 
 func main() {
@@ -350,10 +311,12 @@ func main() {
 		return
 	}
 	//logging
-	fmt.Println("Keyword map to places")
+	if debug {
+		fmt.Println("Keyword map to places")
 
-	for key, val := range wordsAssociatedWithPlaces {
-		fmt.Println(key, ":", val)
+		for key, val := range wordsAssociatedWithPlaces {
+			fmt.Println(key, ":", val)
+		}
 	}
 
 	//create transactions at places from values of wordsAssociatedWithPlaces map
@@ -365,11 +328,13 @@ func main() {
 	}
 
 	//logging
+	//if debug {
 	// fmt.Println("TransactionsAtPlacesMap")
 	// for key, val := range transactionsAtPlacesMap {
 	// 	fmt.Println(key, ":", val)
 	// }
-	//logging
+	//}
+
 	//read through csv file and create a list of transaction objects
 	listOfTransactions, err := createTransactionObjects()
 
@@ -379,16 +344,18 @@ func main() {
 		fmt.Println("Error:", err)
 		return
 	}
+	//if debug {
 	//fmt.Println("Transactions: ")
 
 	// for _, val := range listOfTransactions {
 	// 	val.printTransaction()
 	// }
+	//}
 
 	unmatched := [][]string{}
 
 	calculateTransactionsAtPlaces(transactionsAtPlacesMap, listOfTransactions, wordsAssociatedWithPlaces, unmatched)
-	//fmt.Println(transactionsAtPlacesMap)
+
 	printMapInOrder(transactionsAtPlacesMap)
 
 	return
