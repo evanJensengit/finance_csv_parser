@@ -52,6 +52,8 @@ import (
 // 	return transactionsAtPlaces, nil
 // }
 
+
+
 func printMapInOrder(myMap map[string]float64) {
 	// Extract keys from the map
 	var keys []string
@@ -262,7 +264,6 @@ func createTransactionObjects() ([]Transaction, error) {
 	// scanning the input by the user
 	var pathToCSV string
 	fmt.Scanln(&pathToCSV)
-	
 
 	// Open the CSV file
 	file, err := os.Open(pathToCSV)
@@ -331,7 +332,6 @@ func createTransactionObjects() ([]Transaction, error) {
 			Amount:                   amount,
 			WordsAssociatedWithPlace: patternsOfPlace,
 		}
-
 		data = append(data, record)
 
 	}
@@ -390,8 +390,6 @@ func main() {
 	calculateTransactionsAtPlaces(transactionsAtPlacesMap, listOfTransactions, wordsAssociatedWithPlaces, unmatched)
 	//fmt.Println(transactionsAtPlacesMap)
 	printMapInOrder(transactionsAtPlacesMap)
-
-	
 
 	return
 }
