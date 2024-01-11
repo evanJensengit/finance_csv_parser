@@ -393,7 +393,7 @@ func loopThroughTransactionsInOther(listOfTransactions []Transaction, transactio
 
 	for _, t := range otherTransactions {
 		for {
-			fmt.Println("(l) list current categories")
+			fmt.Println("\n(l) list current categories")
 			fmt.Println("(a) add transaction to current category")
 			fmt.Println("(n) add transaction to new category")
 			fmt.Println("(s) skip this transaction")
@@ -408,7 +408,37 @@ func loopThroughTransactionsInOther(listOfTransactions []Transaction, transactio
 				printKeysOfMapInOrder(transactionsAtPlacesMap)
 			}
 			if input == "a" {
-				//TODO create func to add transaction to category
+				fmt.Println("Which place do you want to associate this transaction with?")
+				printKeysOfMapInOrder(transactionsAtPlacesMap)
+				scanner.Scan()
+				input = strings.ToLower(scanner.Text())
+				_, alreadyInMap := transactionsAtPlacesMap[input]
+				if alreadyInMap {
+					fmt.Println("Which term(s) from this transaction do you want to associate with", input)
+					for _, val := range t.WordsAssociatedWithPlace {
+						fmt.Print("\"", val, "\" ")
+					}
+					fmt.Println()
+
+					scanner.Scan()
+					input := strings.ToLower(scanner.Text())
+
+					parts := strings.Split(input, " ")
+					for _, word := range parts {
+						fmt.Println(word)
+					}
+					break
+
+				} else {
+					fmt.Printf("Place %s is not recognized, would you like to add %s place to possible categories? (y/n) \n ", input, input)
+					scanner.Scan()
+					input := strings.ToLower(scanner.Text())
+					if input == "y" {
+						//create new category in wordsAssociatedWithTransactions
+					} else {
+						continue
+					}
+				}
 				continue
 			}
 			if input == "n" {
@@ -417,11 +447,11 @@ func loopThroughTransactionsInOther(listOfTransactions []Transaction, transactio
 				continue
 			}
 			if input == "s" {
-				//TODO create func to add transaction to category
+				//skip
 				break
 			}
 			if input == "b" {
-				//create func to add transaction to category
+				//go back to previous menu
 				return
 			}
 		}
