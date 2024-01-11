@@ -27,5 +27,5 @@ var ignorePayment2 = []string{"automatic", "payment", "thank", "you"}
 
 func (t *Transaction) printTransaction() {
 	fmt.Println("Place: ", t.Place)
-	fmt.Println("CharacterPatterns", t.WordsAssociatedWithPlace, "\n Date: ", t.Date.Day(), t.Date.Month(), t.Date.Year(), "\n Amount", t.Amount)
+	fmt.Println(" CharacterPatterns", t.WordsAssociatedWithPlace, "\n Date: ", t.Date.Day(), t.Date.Month(), t.Date.Year(), "\n Amount", t.Amount)
 }

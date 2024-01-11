@@ -361,12 +361,17 @@ func saveMapToFile(transactionsAtPlaces map[string]float64) error {
 }
 func getTransactionsInCategory(listOfTransactions []Transaction, place string) []*Transaction {
 	var categoryTransactions []*Transaction
+	fmt.Println("BEFORE TEST")
 
-	for _, t := range listOfTransactions {
-		t.printTransaction()
+	for i, t := range listOfTransactions {
 		if t.Place == place {
-			categoryTransactions = append(categoryTransactions, &t)
+			t.printTransaction()
+			categoryTransactions = append(categoryTransactions, &listOfTransactions[i])
 		}
+	}
+	fmt.Println("TEST")
+	for i := range categoryTransactions {
+		categoryTransactions[i].printTransaction()
 	}
 	return categoryTransactions
 }
@@ -391,9 +396,8 @@ func loopThroughTransactionsInOther(listOfTransactions []Transaction, transactio
 
 	//transactions returned are now pointers so much sure that this is relflected here
 	otherTransactions := getTransactionsInCategory(listOfTransactions, "other")
-	fmt.Println("loopThroughTransactionsInOther")
 
-	for _, t := range otherTransactions {
+	for i, t := range otherTransactions {
 		for {
 			fmt.Println("\n(l) list current categories")
 			fmt.Println("(a) add transaction to current category")
@@ -401,23 +405,24 @@ func loopThroughTransactionsInOther(listOfTransactions []Transaction, transactio
 			fmt.Println("(s) skip this transaction")
 			fmt.Println("(b) go back to previous menu ")
 
-			fmt.Print("Transaction: \n")
+			fmt.Print("\nTransaction: \n")
 			t.printTransaction()
 
 			scanner.Scan()
 			input := strings.ToLower(scanner.Text())
 			if input == "l" {
+				fmt.Println("\nCurrent Categories")
 				printKeysOfMapInOrder(transactionsAtPlacesMap)
 			}
 			if input == "a" {
-				fmt.Println("Which place do you want to associate this transaction with?")
+				fmt.Println("\nWhich place do you want to associate this transaction with?")
 				printKeysOfMapInOrder(transactionsAtPlacesMap)
 				scanner.Scan()
 				input = strings.ToLower(scanner.Text())
 				_, alreadyInMap := transactionsAtPlacesMap[input]
 				if alreadyInMap {
 					place := input
-					fmt.Println("Which term(s) from this transaction do you want to associate with", input)
+					fmt.Println("Add term(s) from this transaction you want to associate with", input, "seperated by a space")
 					for _, val := range t.WordsAssociatedWithPlace {
 						fmt.Print("\"", val, "\" ")
 					}
@@ -450,12 +455,13 @@ func loopThroughTransactionsInOther(listOfTransactions []Transaction, transactio
 
 					defer file.Close()
 					for key, value := range wordsToAdd {
-						line := fmt.Sprintf("%s: %s,", key, value)
+						line := fmt.Sprintf(", %s:%s", key, value)
 						_, err := file.WriteString(line)
 						if err != nil {
 							return err
 						}
 					}
+					otherTransactions[i].Place = place
 
 					break
 
@@ -563,6 +569,15 @@ func main() {
 	}
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
+		if debug {
+			fmt.Println("Transactions in other")
+			t := getTransactionsInCategory(listOfTransactions, "other")
+
+			for i := range t {
+				fmt.Println(t[i])
+			}
+		}
+
 		fmt.Print("Enter the letter with the action associated with what you want to do \n",
 			"(a) look through the 'other' category\n",
 			"(b) enter a new range of dates to calculate transactions\n",

@@ -25,6 +25,4 @@ express:medication, scripts:medication, phrmcy:medication,
 mindful:therapy,
 ambetter:insurance, dental:insurance
 petsmart:cats, petco:cats,
-other:other
-
-
+other:other, valley:therapy, httpsallvallewa:therapy
