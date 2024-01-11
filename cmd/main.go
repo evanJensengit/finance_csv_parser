@@ -359,13 +359,13 @@ func saveMapToFile(transactionsAtPlaces map[string]float64) error {
 
 	return nil
 }
-func getTransactionsInCategory(listOfTransactions []Transaction, place string) []Transaction {
-	var categoryTransactions []Transaction
+func getTransactionsInCategory(listOfTransactions []Transaction, place string) []*Transaction {
+	var categoryTransactions []*Transaction
 
 	for _, t := range listOfTransactions {
 		t.printTransaction()
 		if t.Place == place {
-			categoryTransactions = append(categoryTransactions, t)
+			categoryTransactions = append(categoryTransactions, &t)
 		}
 	}
 	return categoryTransactions
@@ -386,8 +386,10 @@ func printKeysOfMapInOrder(transactionsAtPlacesMap map[string]float64) {
 	}
 }
 
-func loopThroughTransactionsInOther(listOfTransactions []Transaction, transactionsAtPlacesMap map[string]float64) {
+func loopThroughTransactionsInOther(listOfTransactions []Transaction, transactionsAtPlacesMap map[string]float64) error {
 	scanner := bufio.NewScanner(os.Stdin)
+
+	//transactions returned are now pointers so much sure that this is relflected here
 	otherTransactions := getTransactionsInCategory(listOfTransactions, "other")
 	fmt.Println("loopThroughTransactionsInOther")
 
@@ -414,19 +416,47 @@ func loopThroughTransactionsInOther(listOfTransactions []Transaction, transactio
 				input = strings.ToLower(scanner.Text())
 				_, alreadyInMap := transactionsAtPlacesMap[input]
 				if alreadyInMap {
+					place := input
 					fmt.Println("Which term(s) from this transaction do you want to associate with", input)
 					for _, val := range t.WordsAssociatedWithPlace {
 						fmt.Print("\"", val, "\" ")
 					}
 					fmt.Println()
-
+					//split terms user wants to associate with place
 					scanner.Scan()
 					input := strings.ToLower(scanner.Text())
 
 					parts := strings.Split(input, " ")
+					wordsToAdd := make(map[string]string)
 					for _, word := range parts {
-						fmt.Println(word)
+						//if word user entered is a word in the WordsAssociatedWithPlace array
+						if isInArray(word, t.WordsAssociatedWithPlace) {
+							wordsToAdd[word] = place
+						}
 					}
+					fmt.Println(wordsToAdd)
+
+					currentDir, err := os.Getwd()
+					filename := currentDir + "/wordsAssociatedWithPlaces.txt"
+					if err != nil {
+						return err
+					}
+					// Write JSON data to the file
+
+					file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+					if err != nil {
+						return err
+					}
+
+					defer file.Close()
+					for key, value := range wordsToAdd {
+						line := fmt.Sprintf("%s: %s,", key, value)
+						_, err := file.WriteString(line)
+						if err != nil {
+							return err
+						}
+					}
+
 					break
 
 				} else {
@@ -452,11 +482,21 @@ func loopThroughTransactionsInOther(listOfTransactions []Transaction, transactio
 			}
 			if input == "b" {
 				//go back to previous menu
-				return
+				return nil
 			}
 		}
 
 	}
+	return nil
+}
+
+func isInArray(value string, array []string) bool {
+	for _, v := range array {
+		if v == value {
+			return true
+		}
+	}
+	return false
 }
 
 func main() {

@@ -20,6 +20,7 @@ type Transaction struct {
 
 const other string = "other"
 
+// ignore these since they are payments to the credit card and don't represent actual transactions outside of user bank account
 var ignorePayment1 = []string{"online", "payment", "thank", "you"}
 
 var ignorePayment2 = []string{"automatic", "payment", "thank", "you"}
