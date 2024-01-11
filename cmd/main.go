@@ -569,19 +569,20 @@ func main() {
 	}
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
-		if debug {
-			fmt.Println("Transactions in other")
-			t := getTransactionsInCategory(listOfTransactions, "other")
+		// if debug {
+		// 	fmt.Println("Transactions in other")
+		// 	t := getTransactionsInCategory(listOfTransactions, "other")
 
-			for i := range t {
-				fmt.Println(t[i])
-			}
-		}
+		// 	for i := range t {
+		// 		fmt.Println(t[i])
+		// 	}
+		// }
 
 		fmt.Print("Enter the letter with the action associated with what you want to do \n",
 			"(a) look through the 'other' category\n",
 			"(b) enter a new range of dates to calculate transactions\n",
 			"(c) look through categories to see expenses in each category\n",
+			"(all) see all categories and expenses of categories\n",
 			"(q) quit the program\n")
 		scanner.Scan()
 		input := strings.ToLower(scanner.Text())
@@ -593,6 +594,10 @@ func main() {
 
 		if input == "a" {
 			loopThroughTransactionsInOther(listOfTransactions, transactionsAtPlacesMap)
+		}
+
+		if input == "all" {
+			printMapInOrder(transactionsAtPlacesMap)
 		}
 
 	}
