@@ -14,7 +14,7 @@ import (
 	"unicode"
 )
 
-const debug bool = true
+const debug bool = false
 
 // generatePlaceDict reads a text file with lines of strings
 // in the form of ${key:value,key:value,key:value} and returns a map with key-value pairs.
@@ -163,6 +163,7 @@ func createTransactionObjects() ([]Transaction, error) {
 func findTransactionRangeToCalculate(transactionsAtPlaces []Transaction) ([]Transaction, error) {
 	lastTransactionDate := transactionsAtPlaces[0].Date
 	firstTransactionDate := transactionsAtPlaces[len(transactionsAtPlaces)-1].Date
+	//default values for testing
 	fromInput := "12/01/2023"
 	toInput := "12/31/2023"
 	if !debug {
@@ -172,7 +173,6 @@ func findTransactionRangeToCalculate(transactionsAtPlaces []Transaction) ([]Tran
 			"in the form of from: mm/dd/yyyy to: mm/dd/yyyy")
 
 		// scanning the input by the user
-		var fromInput, toInput string
 		fmt.Scanln(&fromInput, &toInput)
 	}
 	fromInputDate, err := time.Parse("01/02/2006", fromInput)
@@ -207,6 +207,7 @@ func findTransactionRangeToCalculate(transactionsAtPlaces []Transaction) ([]Tran
 		back := len(transactionsAtPlaces) - 1
 		front := 0
 		//can be optimized to be log(n) time instead of O(n)
+		//find where toInputDate is greater than transactionsAtPlaces[back] and fromInputDate is less than transactionsAtPlaces[front]
 		for back > front {
 			inputGreaterThanCurrent, err := firstDateLessThanSecondDate(transactionsAtPlaces[back].Date, fromInputDate)
 			if err != nil {
@@ -239,7 +240,7 @@ func findTransactionRangeToCalculate(transactionsAtPlaces []Transaction) ([]Tran
 // checks if the first date passed to function is chronologically before the second date
 // returns true if so false otherwise
 func firstDateLessThanSecondDate(date1 time.Time, date2 time.Time) (bool, error) {
-	//fmt.Println("First date: ", date1, "\n", "Second Date: ", date2)
+
 	if date1.Year() < date2.Year() {
 		return true, nil
 	} else if date1.Year() == date2.Year() {
@@ -260,16 +261,21 @@ func calculateTransactionsAtPlaces(transactionsAtPlacesMap map[string]float64,
 	listOfTransactions []Transaction, wordsAssociatedWithPlaces map[string]string,
 	unmatchedTransactions []Transaction) {
 
+	//loop through transactions and see if there is a word associated with the place
 	for index, transaction := range listOfTransactions {
 		foundMatch := false
-		for _, pattern := range transaction.WordsAssociatedWithPlace {
-			place, ok := wordsAssociatedWithPlaces[pattern]
-			if ok {
+		for _, word := range transaction.WordsAssociatedWithPlace {
+			place, foundPlaceAssociatedWithWord := wordsAssociatedWithPlaces[word]
+			//found place associated with word
+			if foundPlaceAssociatedWithWord {
 				foundMatch = true
 				transactionsAtPlacesMap[place] += transaction.Amount
+				//round to two decimal places
+				transactionsAtPlacesMap[place] = math.Round(transactionsAtPlacesMap[place]*100) / 100
 				listOfTransactions[index].Place = place
 			}
 		}
+		//no match, place in "other" category
 		if !foundMatch {
 			if len(transaction.WordsAssociatedWithPlace) == len(ignorePayment1) {
 				ignoreString1 := strings.Join(ignorePayment1, " ")
@@ -313,16 +319,15 @@ func printMapInOrder(myMap map[string]float64) {
 	fmt.Printf("Total: %.2f \n", total)
 }
 
-func getTotalSpentAtPlaces(transactionsAtPlaces map[string]float64) float64 {
+func getTotalSpentAtAllPlaces(transactionsAtPlaces map[string]float64) float64 {
 	var total float64 = 0
-	for key, _ := range transactionsAtPlaces {
+	for key := range transactionsAtPlaces {
 		total += transactionsAtPlaces[key]
 	}
 	return math.Round(total*100) / 100
 }
 func saveMapToFile(transactionsAtPlaces map[string]float64) error {
 	// Convert the map to JSON format
-
 	jsonData, err := json.MarshalIndent(transactionsAtPlaces, "", "    ")
 	if err != nil {
 		return err
@@ -332,6 +337,7 @@ func saveMapToFile(transactionsAtPlaces map[string]float64) error {
 	if err != nil {
 		return err
 	}
+
 	// Write JSON data to the file
 	err = os.WriteFile(filename, jsonData, 0644)
 	if err != nil {
@@ -346,7 +352,7 @@ func saveMapToFile(transactionsAtPlaces map[string]float64) error {
 	defer file.Close()
 
 	totalSpentAtPlaces := make(map[string]float64)
-	totalSpentAtPlaces["Total"] = getTotalSpentAtPlaces(transactionsAtPlaces)
+	totalSpentAtPlaces["Total"] = getTotalSpentAtAllPlaces(transactionsAtPlaces)
 
 	// Iterate through the map and append each key-value pair to the file
 	for key, value := range totalSpentAtPlaces {
@@ -361,7 +367,6 @@ func saveMapToFile(transactionsAtPlaces map[string]float64) error {
 }
 func getTransactionsInCategory(listOfTransactions []Transaction, place string) []*Transaction {
 	var categoryTransactions []*Transaction
-	fmt.Println("BEFORE TEST")
 
 	for i, t := range listOfTransactions {
 		if t.Place == place {
@@ -369,7 +374,6 @@ func getTransactionsInCategory(listOfTransactions []Transaction, place string) [
 			categoryTransactions = append(categoryTransactions, &listOfTransactions[i])
 		}
 	}
-	fmt.Println("TEST")
 	for i := range categoryTransactions {
 		categoryTransactions[i].printTransaction()
 	}
@@ -579,25 +583,31 @@ func main() {
 		// }
 
 		fmt.Print("Enter the letter with the action associated with what you want to do \n",
-			"(a) look through the 'other' category\n",
+			"(o) look through the 'other' category\n",
 			"(b) enter a new range of dates to calculate transactions\n",
 			"(c) look through categories to see expenses in each category\n",
 			"(all) see all categories and expenses of categories\n",
 			"(q) quit the program\n")
 		scanner.Scan()
 		input := strings.ToLower(scanner.Text())
-		fmt.Printf("User input %s %T\n", input, input)
+		if debug {
+			fmt.Printf("User input %s %T\n", input, input)
+		}
 		if input == "q" {
 			fmt.Println("Exiting Finance Helper.")
 			break
 		}
 
-		if input == "a" {
+		if input == "o" {
 			loopThroughTransactionsInOther(listOfTransactions, transactionsAtPlacesMap)
 		}
 
 		if input == "all" {
 			printMapInOrder(transactionsAtPlacesMap)
+		}
+
+		if input == "c" {
+			//getTransactionsInCategory
 		}
 
 	}
