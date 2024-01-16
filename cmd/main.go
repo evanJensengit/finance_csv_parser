@@ -14,7 +14,7 @@ import (
 	"unicode"
 )
 
-const debug bool = true
+const debug bool = false
 
 // generatePlaceDict reads a text file with lines of strings
 // in the form of ${key:value,key:value,key:value} and returns a map with key-value pairs.
@@ -163,16 +163,18 @@ func createTransactionObjects() ([]Transaction, error) {
 func findTransactionRangeToCalculate(transactionsAtPlaces []Transaction) ([]Transaction, error) {
 	lastTransactionDate := transactionsAtPlaces[0].Date
 	firstTransactionDate := transactionsAtPlaces[len(transactionsAtPlaces)-1].Date
+	//default values for testing
+	fromInput := "12/01/2023"
+	toInput := "12/31/2023"
+	if !debug {
+		fmt.Println("Please enter the dates you would like to calculate transactions ",
+			"between the range of ", firstTransactionDate.Day(), firstTransactionDate.Month(), firstTransactionDate.Year(), " to",
+			lastTransactionDate.Day(), lastTransactionDate.Month(), lastTransactionDate.Year(),
+			"in the form of from: mm/dd/yyyy to: mm/dd/yyyy")
 
-	fmt.Println("Please enter the dates you would like to calculate transactions ",
-		"between the range of ", firstTransactionDate.Day(), firstTransactionDate.Month(), firstTransactionDate.Year(), " to",
-		lastTransactionDate.Day(), lastTransactionDate.Month(), lastTransactionDate.Year(),
-		"in the form of from: mm/dd/yyyy to: mm/dd/yyyy")
-
-	// scanning the input by the user
-	var fromInput, toInput string
-	fmt.Scanln(&fromInput, &toInput)
-
+		// scanning the input by the user
+		fmt.Scanln(&fromInput, &toInput)
+	}
 	fromInputDate, err := time.Parse("01/02/2006", fromInput)
 	if err != nil {
 		fmt.Println("Error parsing date:", err)
@@ -205,6 +207,7 @@ func findTransactionRangeToCalculate(transactionsAtPlaces []Transaction) ([]Tran
 		back := len(transactionsAtPlaces) - 1
 		front := 0
 		//can be optimized to be log(n) time instead of O(n)
+		//find where toInputDate is greater than transactionsAtPlaces[back] and fromInputDate is less than transactionsAtPlaces[front]
 		for back > front {
 			inputGreaterThanCurrent, err := firstDateLessThanSecondDate(transactionsAtPlaces[back].Date, fromInputDate)
 			if err != nil {
@@ -237,7 +240,7 @@ func findTransactionRangeToCalculate(transactionsAtPlaces []Transaction) ([]Tran
 // checks if the first date passed to function is chronologically before the second date
 // returns true if so false otherwise
 func firstDateLessThanSecondDate(date1 time.Time, date2 time.Time) (bool, error) {
-	//fmt.Println("First date: ", date1, "\n", "Second Date: ", date2)
+
 	if date1.Year() < date2.Year() {
 		return true, nil
 	} else if date1.Year() == date2.Year() {
@@ -256,17 +259,23 @@ func firstDateLessThanSecondDate(date1 time.Time, date2 time.Time) (bool, error)
 // to determine which transactions are correlated with which place in
 func calculateTransactionsAtPlaces(transactionsAtPlacesMap map[string]float64,
 	listOfTransactions []Transaction, wordsAssociatedWithPlaces map[string]string,
-	unmatchedTransactions [][]string) {
-	for _, transaction := range listOfTransactions {
+	unmatchedTransactions []Transaction) {
+
+	//loop through transactions and see if there is a word associated with the place
+	for index, transaction := range listOfTransactions {
 		foundMatch := false
-		for _, pattern := range transaction.WordsAssociatedWithPlace {
-			place, ok := wordsAssociatedWithPlaces[pattern]
-			if ok {
+		for _, word := range transaction.WordsAssociatedWithPlace {
+			place, foundPlaceAssociatedWithWord := wordsAssociatedWithPlaces[word]
+			//found place associated with word
+			if foundPlaceAssociatedWithWord {
 				foundMatch = true
 				transactionsAtPlacesMap[place] += transaction.Amount
-
+				//round to two decimal places
+				transactionsAtPlacesMap[place] = math.Round(transactionsAtPlacesMap[place]*100) / 100
+				listOfTransactions[index].Place = place
 			}
 		}
+		//no match, place in "other" category
 		if !foundMatch {
 			if len(transaction.WordsAssociatedWithPlace) == len(ignorePayment1) {
 				ignoreString1 := strings.Join(ignorePayment1, " ")
@@ -278,8 +287,9 @@ func calculateTransactionsAtPlaces(transactionsAtPlacesMap map[string]float64,
 
 			}
 			//goes in "Other" category
-			unmatchedTransactions = append(unmatchedTransactions, transaction.WordsAssociatedWithPlace)
+			unmatchedTransactions = append(unmatchedTransactions, transaction)
 			transactionsAtPlacesMap[other] += transaction.Amount
+			listOfTransactions[index].Place = other
 			if debug {
 				fmt.Println("Other Transaction", transaction)
 			}
@@ -309,16 +319,15 @@ func printMapInOrder(myMap map[string]float64) {
 	fmt.Printf("Total: %.2f \n", total)
 }
 
-func getTotalSpentAtPlaces(transactionsAtPlaces map[string]float64) float64 {
+func getTotalSpentAtAllPlaces(transactionsAtPlaces map[string]float64) float64 {
 	var total float64 = 0
-	for key, _ := range transactionsAtPlaces {
+	for key := range transactionsAtPlaces {
 		total += transactionsAtPlaces[key]
 	}
 	return math.Round(total*100) / 100
 }
 func saveMapToFile(transactionsAtPlaces map[string]float64) error {
 	// Convert the map to JSON format
-
 	jsonData, err := json.MarshalIndent(transactionsAtPlaces, "", "    ")
 	if err != nil {
 		return err
@@ -328,6 +337,7 @@ func saveMapToFile(transactionsAtPlaces map[string]float64) error {
 	if err != nil {
 		return err
 	}
+
 	// Write JSON data to the file
 	err = os.WriteFile(filename, jsonData, 0644)
 	if err != nil {
@@ -342,7 +352,7 @@ func saveMapToFile(transactionsAtPlaces map[string]float64) error {
 	defer file.Close()
 
 	totalSpentAtPlaces := make(map[string]float64)
-	totalSpentAtPlaces["Total"] = getTotalSpentAtPlaces(transactionsAtPlaces)
+	totalSpentAtPlaces["Total"] = getTotalSpentAtAllPlaces(transactionsAtPlaces)
 
 	// Iterate through the map and append each key-value pair to the file
 	for key, value := range totalSpentAtPlaces {
@@ -354,6 +364,149 @@ func saveMapToFile(transactionsAtPlaces map[string]float64) error {
 	}
 
 	return nil
+}
+func getTransactionsInCategory(listOfTransactions []Transaction, place string) []*Transaction {
+	var categoryTransactions []*Transaction
+
+	for i, t := range listOfTransactions {
+		if t.Place == place {
+			t.printTransaction()
+			categoryTransactions = append(categoryTransactions, &listOfTransactions[i])
+		}
+	}
+	for i := range categoryTransactions {
+		categoryTransactions[i].printTransaction()
+	}
+	return categoryTransactions
+}
+
+func printKeysOfMapInOrder(transactionsAtPlacesMap map[string]float64) {
+	var keys []string
+	for key := range transactionsAtPlacesMap {
+		keys = append(keys, key)
+	}
+
+	// Sort the keys in alphabetical order
+	sort.Strings(keys)
+
+	// Iterate over sorted keys and print corresponding values
+	for _, key := range keys {
+		fmt.Printf("%s\n", key)
+	}
+}
+
+func loopThroughTransactionsInOther(listOfTransactions []Transaction, transactionsAtPlacesMap map[string]float64) error {
+	scanner := bufio.NewScanner(os.Stdin)
+
+	//transactions returned are now pointers so much sure that this is relflected here
+	otherTransactions := getTransactionsInCategory(listOfTransactions, "other")
+
+	for i, t := range otherTransactions {
+		for {
+			fmt.Println("\n(l) list current categories")
+			fmt.Println("(a) add transaction to current category")
+			fmt.Println("(n) add transaction to new category")
+			fmt.Println("(s) skip this transaction")
+			fmt.Println("(b) go back to previous menu ")
+
+			fmt.Print("\nTransaction: \n")
+			t.printTransaction()
+
+			scanner.Scan()
+			input := strings.ToLower(scanner.Text())
+			if input == "l" {
+				fmt.Println("\nCurrent Categories")
+				printKeysOfMapInOrder(transactionsAtPlacesMap)
+			}
+			if input == "a" {
+				fmt.Println("\nWhich place do you want to associate this transaction with?")
+				printKeysOfMapInOrder(transactionsAtPlacesMap)
+				scanner.Scan()
+				input = strings.ToLower(scanner.Text())
+				_, alreadyInMap := transactionsAtPlacesMap[input]
+				if alreadyInMap {
+					place := input
+					fmt.Println("Add term(s) from this transaction you want to associate with", input, "seperated by a space")
+					for _, val := range t.WordsAssociatedWithPlace {
+						fmt.Print("\"", val, "\" ")
+					}
+					fmt.Println()
+					//split terms user wants to associate with place
+					scanner.Scan()
+					input := strings.ToLower(scanner.Text())
+
+					parts := strings.Split(input, " ")
+					wordsToAdd := make(map[string]string)
+					for _, word := range parts {
+						//if word user entered is a word in the WordsAssociatedWithPlace array
+						if isInArray(word, t.WordsAssociatedWithPlace) {
+							wordsToAdd[word] = place
+						}
+					}
+					fmt.Println(wordsToAdd)
+
+					currentDir, err := os.Getwd()
+					filename := currentDir + "/wordsAssociatedWithPlaces.txt"
+					if err != nil {
+						return err
+					}
+					// Write JSON data to the file
+
+					file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+					if err != nil {
+						return err
+					}
+
+					defer file.Close()
+					for key, value := range wordsToAdd {
+						line := fmt.Sprintf(", %s:%s", key, value)
+						_, err := file.WriteString(line)
+						if err != nil {
+							return err
+						}
+					}
+					otherTransactions[i].Place = place
+
+					break
+
+				} else {
+					fmt.Printf("Place %s is not recognized, would you like to add %s place to possible categories? (y/n) \n ", input, input)
+					scanner.Scan()
+					input := strings.ToLower(scanner.Text())
+					if input == "y" {
+						//create new category in wordsAssociatedWithTransactions
+					} else {
+						continue
+					}
+				}
+				continue
+			}
+			if input == "n" {
+				//TODO create func to ask user what new category should be called
+				//and add transaction to new category
+				continue
+			}
+			if input == "s" {
+				//skip
+				break
+			}
+			if input == "b" {
+				//go back to previous menu
+				return nil
+			}
+		}
+
+	}
+	return nil
+}
+
+func isInArray(value string, array []string) bool {
+	for _, v := range array {
+		if v == value {
+			return true
+		}
+	}
+	return false
 }
 
 func main() {
@@ -404,7 +557,7 @@ func main() {
 	// }
 	//}
 
-	unmatched := [][]string{}
+	var unmatched []Transaction
 
 	calculateTransactionsAtPlaces(transactionsAtPlacesMap, listOfTransactions, wordsAssociatedWithPlaces, unmatched)
 
@@ -417,6 +570,46 @@ func main() {
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
+	}
+	scanner := bufio.NewScanner(os.Stdin)
+	for {
+		// if debug {
+		// 	fmt.Println("Transactions in other")
+		// 	t := getTransactionsInCategory(listOfTransactions, "other")
+
+		// 	for i := range t {
+		// 		fmt.Println(t[i])
+		// 	}
+		// }
+
+		fmt.Print("Enter the letter with the action associated with what you want to do \n",
+			"(o) look through the 'other' category\n",
+			"(b) enter a new range of dates to calculate transactions\n",
+			"(c) look through categories to see expenses in each category\n",
+			"(all) see all categories and expenses of categories\n",
+			"(q) quit the program\n")
+		scanner.Scan()
+		input := strings.ToLower(scanner.Text())
+		if debug {
+			fmt.Printf("User input %s %T\n", input, input)
+		}
+		if input == "q" {
+			fmt.Println("Exiting Finance Helper.")
+			break
+		}
+
+		if input == "o" {
+			loopThroughTransactionsInOther(listOfTransactions, transactionsAtPlacesMap)
+		}
+
+		if input == "all" {
+			printMapInOrder(transactionsAtPlacesMap)
+		}
+
+		if input == "c" {
+			//getTransactionsInCategory
+		}
+
 	}
 
 	return
