@@ -273,6 +273,7 @@ func calculateTransactionsAtPlaces(transactionsAtPlacesMap map[string]float64,
 				//round to two decimal places
 				transactionsAtPlacesMap[place] = math.Round(transactionsAtPlacesMap[place]*100) / 100
 				listOfTransactions[index].Place = place
+				break
 			}
 		}
 		//no match, place in "other" category
@@ -370,13 +371,13 @@ func getTransactionsInCategory(listOfTransactions []Transaction, place string) [
 
 	for i, t := range listOfTransactions {
 		if t.Place == place {
-			t.printTransaction()
+
 			categoryTransactions = append(categoryTransactions, &listOfTransactions[i])
 		}
 	}
-	for i := range categoryTransactions {
-		categoryTransactions[i].printTransaction()
-	}
+	// for i := range categoryTransactions {
+	// 	categoryTransactions[i].printTransaction()
+	// }
 	return categoryTransactions
 }
 
@@ -607,9 +608,19 @@ func main() {
 		}
 
 		if input == "c" {
-			//getTransactionsInCategory
-		}
+			
+			printMapInOrder(transactionsAtPlacesMap)
+			fmt.Println("What category would you like to see transaction details for?")
 
+			scanner.Scan()
+			input := strings.ToLower(scanner.Text())
+			fmt.Println()
+			categoryTransactions := getTransactionsInCategory(listOfTransactions, input)
+
+			for i := len(categoryTransactions) - 1; i >= 0; i-- {
+				categoryTransactions[i].printDateAndCost()
+			}
+		}
 	}
 
 	return
